@@ -71,6 +71,7 @@ func Authentication(authenticator Authenticator) func(next http.Handler) http.Ha
 				ae := ErrHTTP{
 					http.StatusUnauthorized,
 					http.StatusText(http.StatusUnauthorized),
+					nil,
 				}
 				renderJson(w, ae.StatusCode, ae)
 				return

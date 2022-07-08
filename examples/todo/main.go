@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gosom/kouti/auth"
+	"github.com/gosom/kouti/db"
 	"github.com/gosom/kouti/httpserver"
 	"github.com/gosom/kouti/logger"
 	"github.com/gosom/kouti/utils"
@@ -47,7 +49,23 @@ type UserHandler struct {
 	web.BaseHandler
 }
 
+type CreateUserPayload struct {
+	UserName string `json:"username" validate:"required,min=4,max=50"`
+	Password string `json:"password" validate:"required,password"`
+}
+
 func (h UserHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var payload CreateUserPayload
+	if err := h.BindJSON(r, &payload); err != nil {
+		ae := web.NewBadRequestError("")
+		h.Json(w, ae.StatusCode, ae)
+		return
+	}
+	if err := h.Validate(payload); err != nil {
+		ae := web.NewValidationError(err)
+		h.Json(w, ae.StatusCode, ae)
+		return
+	}
 }
 
 func NewUserHandler(log zerolog.Logger) UserHandler {
@@ -59,6 +77,14 @@ func NewUserHandler(log zerolog.Logger) UserHandler {
 // ==========================================================================
 func main() {
 	defer utils.ExitRecover()
+	ctx := context.Background()
+
+	dsn := "postgres://postgres:secret@localhost:5432/todo?sslmode=disable&pool_max_conns=10"
+	dbconn, err := db.Connect(ctx, dsn)
+	if err != nil {
+		panic(err)
+	}
+	defer dbconn.Close()
 
 	log := logger.New(logger.Config{Debug: true})
 

@@ -7,11 +7,12 @@ type DefaultHandler struct {
 }
 
 func (d DefaultHandler) NotFound(w http.ResponseWriter, r *http.Request) {
-	e := ErrHTTP{http.StatusNotFound, http.StatusText(http.StatusNotFound)}
+	e := ErrHTTP{http.StatusNotFound, http.StatusText(http.StatusNotFound),
+		nil}
 	d.Json(w, e.StatusCode, e)
 }
 
 func (d DefaultHandler) MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
-	e := ErrHTTP{http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed)}
+	e := ErrHTTP{http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed), nil}
 	d.Json(w, e.StatusCode, e)
 }
