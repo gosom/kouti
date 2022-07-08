@@ -25,7 +25,8 @@ import (
 // have a working http server with some sane defaults
 type Config struct {
 	// Host defaults to :8080
-	Host   string
+	Host string
+	// Router is the http router
 	Router http.Handler
 	// ReadTimeout defaults to 1m
 	ReadTimeout time.Duration
