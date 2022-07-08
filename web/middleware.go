@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"sync"
 	"time"
@@ -53,3 +54,44 @@ func RequestLogger(logger zerolog.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(fn)
 	}
 }
+
+type ctxKey int
+
+const Authenticated ctxKey = ctxKey(0)
+
+type Authenticator interface {
+	Authenticate(r *http.Request) (any, error)
+}
+
+func Authentication(authenticator Authenticator) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			identity, err := authenticator.Authenticate(r)
+			if err != nil {
+				ae := ErrHTTP{
+					http.StatusUnauthorized,
+					http.StatusText(http.StatusUnauthorized),
+				}
+				renderJson(w, ae.StatusCode, ae)
+				return
+			}
+			ctx := context.WithValue(r.Context(), Authenticated, identity)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+/*
+func getBearerTokenFromHeader(r *http.Request) (string, error) {
+	const (
+		headerAuthorization = "Authorization"
+		headerPrefixBearer  = "BEARER"
+	)
+	bearer := r.Header.Get(headerAuthorization)
+	size := len(headerPrefixBearer) + 1
+	if len(bearer) > size && strings.ToUpper(bearer[0:size-1]) == headerPrefixBearer {
+		return bearer[size:], nil
+	}
+	return "", err
+}
+*/

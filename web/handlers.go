@@ -49,12 +49,5 @@ func (o BaseHandler) BindJSON(r *http.Request, v any) error {
 }
 
 func (o BaseHandler) Json(w http.ResponseWriter, statusCode int, value any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	if value == nil {
-		return
-	}
-	if err := json.NewEncoder(w).Encode(value); err != nil {
-		panic(err)
-	}
+	renderJson(w, statusCode, value)
 }
