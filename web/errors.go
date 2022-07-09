@@ -54,3 +54,11 @@ func NewValidationError(err error) ErrHTTP {
 	}
 	return ans
 }
+
+func NewInternalServerError(err error) ErrHTTP {
+	ans := ErrHTTP{
+		StatusCode: http.StatusInternalServerError,
+		Message:    err.Error(),
+	}
+	return ans
+}
