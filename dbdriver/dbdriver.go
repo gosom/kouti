@@ -1,4 +1,4 @@
-package db
+package dbdriver
 
 import (
 	"context"
