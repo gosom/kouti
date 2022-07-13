@@ -3,8 +3,41 @@ package dbdriver
 import (
 	"context"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/rs/zerolog"
 )
+
+type Config struct {
+	Logger     zerolog.Logger
+	ConnString string
+}
+
+type DB struct {
+	logger zerolog.Logger
+	dbconn *pgxpool.Pool
+}
+
+func New(ctx context.Context, cfg Config) (DB, error) {
+	ans := DB{
+		logger: cfg.Logger,
+	}
+	var err error
+	ans.dbconn, err = Connect(ctx, cfg.ConnString)
+	return ans, err
+}
+
+func (o DB) RawConn() *pgxpool.Pool {
+	return o.dbconn
+}
+
+func (o DB) Begin(ctx context.Context) (pgx.Tx, error) {
+	return o.dbconn.Begin(ctx)
+}
+
+func (o DB) Close() {
+	o.dbconn.Close()
+}
 
 // Connect connString like:
 // //   # Example DSN

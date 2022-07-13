@@ -5,36 +5,30 @@ import (
 	"net/http"
 )
 
-type IResourceService[M, PostP, R any] interface {
-	CreateResource(ctx context.Context, p PostP) (M, error)
-	GetResourceByID(ctx context.Context, id int) (M, error)
+type IResourceService[Q, P, R any] interface {
+	CreateResource(ctx context.Context, p Q) (R, error)
+	GetResourceByID(ctx context.Context, id int) (R, error)
 	DeleteResourceByID(ctx context.Context, id int) error
-	SelectResources(ctx context.Context) ([]M, error)
-	ModelToResource(ctx context.Context, m M) (R, error)
+	SelectResources(ctx context.Context, p P) ([]R, error)
+	SearchResources(ctx context.Context, p P) ([]R, error)
 }
 
-type ResourceHandler[M, PostP, R any] struct {
+type ResourceHandler[Q, P, R any] struct {
 	BaseHandler
-	Srv IResourceService[M, PostP, R]
+	Srv IResourceService[Q, P, R]
 }
 
 // Get GET
-func (h ResourceHandler[M, PostP, R]) Get(w http.ResponseWriter, r *http.Request) {
+func (h ResourceHandler[Q, P, R]) Get(w http.ResponseWriter, r *http.Request) {
 	resourceId, err := h.UrlParamInt(r, "id")
 	if err != nil {
 		ae := NewBadRequestError("cannot fetch id from url")
 		h.Json(w, ae.StatusCode, ae)
 		return
 	}
-	m, err := h.Srv.GetResourceByID(r.Context(), resourceId)
+	resp, err := h.Srv.GetResourceByID(r.Context(), resourceId)
 	if err != nil {
-		ae := NewInternalServerError(err)
-		h.Json(w, ae.StatusCode, ae)
-		return
-	}
-	resp, err := h.Srv.ModelToResource(r.Context(), m)
-	if err != nil {
-		ae := NewInternalServerError(err)
+		ae := NewErrHTTPFromError(err)
 		h.Json(w, ae.StatusCode, ae)
 		return
 	}
@@ -42,8 +36,8 @@ func (h ResourceHandler[M, PostP, R]) Get(w http.ResponseWriter, r *http.Request
 }
 
 // Post
-func (h ResourceHandler[M, PostP, R]) Post(w http.ResponseWriter, r *http.Request) {
-	var payload PostP
+func (h ResourceHandler[Q, P, R]) Post(w http.ResponseWriter, r *http.Request) {
+	var payload Q
 	if err := h.BindJSON(r, &payload); err != nil {
 		ae := NewBadRequestError("")
 		h.Json(w, ae.StatusCode, ae)
@@ -54,15 +48,9 @@ func (h ResourceHandler[M, PostP, R]) Post(w http.ResponseWriter, r *http.Reques
 		h.Json(w, ae.StatusCode, ae)
 		return
 	}
-	m, err := h.Srv.CreateResource(r.Context(), payload)
+	resp, err := h.Srv.CreateResource(r.Context(), payload)
 	if err != nil {
-		ae := NewInternalServerError(err)
-		h.Json(w, ae.StatusCode, ae)
-		return
-	}
-	resp, err := h.Srv.ModelToResource(r.Context(), m)
-	if err != nil {
-		ae := NewInternalServerError(err)
+		ae := NewErrHTTPFromError(err)
 		h.Json(w, ae.StatusCode, ae)
 		return
 	}
@@ -70,7 +58,7 @@ func (h ResourceHandler[M, PostP, R]) Post(w http.ResponseWriter, r *http.Reques
 }
 
 // Delete
-func (h ResourceHandler[M, PostP, R]) Delete(w http.ResponseWriter, r *http.Request) {
+func (h ResourceHandler[Q, P, R]) Delete(w http.ResponseWriter, r *http.Request) {
 	resourceId, err := h.UrlParamInt(r, "id")
 	if err != nil {
 		ae := NewBadRequestError("cannot fetch id from url")
@@ -86,33 +74,53 @@ func (h ResourceHandler[M, PostP, R]) Delete(w http.ResponseWriter, r *http.Requ
 }
 
 // Put
-func (h ResourceHandler[M, PostP, R]) Put(w http.ResponseWriter, r *http.Request) {
+func (h ResourceHandler[Q, P, R]) Put(w http.ResponseWriter, r *http.Request) {
 }
 
 // Patch
-func (h ResourceHandler[M, PostP, R]) Patch(w http.ResponseWriter, r *http.Request) {
+func (h ResourceHandler[Q, P, R]) Patch(w http.ResponseWriter, r *http.Request) {
 }
 
 // Select
-func (h ResourceHandler[M, PostP, R]) Select(w http.ResponseWriter, r *http.Request) {
-	items, err := h.Srv.SelectResources(r.Context())
+func (h ResourceHandler[Q, P, R]) Select(w http.ResponseWriter, r *http.Request) {
+	var qp P
+	if err := h.BindQueryParams(r, &qp); err != nil {
+		ae := NewBadRequestError("")
+		h.Json(w, ae.StatusCode, ae)
+		return
+	}
+	if err := h.Validate(qp); err != nil {
+		ae := NewValidationError(err)
+		h.Json(w, ae.StatusCode, ae)
+		return
+	}
+	items, err := h.Srv.SelectResources(r.Context(), qp)
 	if err != nil {
 		ae := NewInternalServerError(err)
 		h.Json(w, ae.StatusCode, ae)
 		return
 	}
-	resps := make([]R, len(items))
-	for i := range resps {
-		resps[i], err = h.Srv.ModelToResource(r.Context(), items[i])
-		if err != nil {
-			ae := NewInternalServerError(err)
-			h.Json(w, ae.StatusCode, ae)
-			return
-		}
-	}
-	h.Json(w, http.StatusOK, resps)
+	h.Json(w, http.StatusOK, items)
 }
 
 // Search
-func (h ResourceHandler[M, PostP, R]) Search(w http.ResponseWriter, r *http.Request) {
+func (h ResourceHandler[Q, P, R]) Search(w http.ResponseWriter, r *http.Request) {
+	var qp P
+	if err := h.BindQueryParams(r, &qp); err != nil {
+		ae := NewBadRequestError("")
+		h.Json(w, ae.StatusCode, ae)
+		return
+	}
+	if err := h.Validate(qp); err != nil {
+		ae := NewValidationError(err)
+		h.Json(w, ae.StatusCode, ae)
+		return
+	}
+	items, err := h.Srv.SearchResources(r.Context(), qp)
+	if err != nil {
+		ae := NewInternalServerError(err)
+		h.Json(w, ae.StatusCode, ae)
+		return
+	}
+	h.Json(w, http.StatusOK, items)
 }

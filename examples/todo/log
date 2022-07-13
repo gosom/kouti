@@ -1,0 +1,3 @@
+# package orm
+queries/users.sql:8:5: column "rank_email" does not exist
+make: *** [Makefile:5: generate] Error 1

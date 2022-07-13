@@ -8,8 +8,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/schema"
 	"github.com/rs/zerolog"
 )
+
+var decoder = schema.NewDecoder()
 
 type BaseHandler struct {
 	Logger    zerolog.Logger
@@ -57,6 +60,10 @@ func (o BaseHandler) UrlParamInt(r *http.Request, key string) (int, error) {
 
 func (o BaseHandler) BindJSON(r *http.Request, v any) error {
 	return json.NewDecoder(r.Body).Decode(v)
+}
+
+func (o BaseHandler) BindQueryParams(r *http.Request, v any) error {
+	return decoder.Decode(v, r.URL.Query())
 }
 
 func (o BaseHandler) Json(w http.ResponseWriter, statusCode int, value any) {
