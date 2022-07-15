@@ -21,7 +21,7 @@ get-users:
 	 - curl -i -XGET 'http://localhost:8080/api/v1/users/?pageSize=10'
 
 get-user:
-	 - curl -i -XGET http://localhost:8080/api/v1/users/1
+	 - curl -i -XGET http://localhost:8080/api/v1/users/2
 
 delete-user:
 	 - curl -i -XDELETE http://localhost:8080/api/v1/users/1

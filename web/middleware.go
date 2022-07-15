@@ -11,6 +11,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
+func IdentityFromRequestContext(r *http.Request) any {
+	return r.Context().Value(Authenticated)
+}
+
 func RequestLogger(logger zerolog.Logger) func(http.Handler) http.Handler {
 	var bufferPool = sync.Pool{
 		New: func() interface{} { return new(bytes.Buffer) },
@@ -63,9 +67,15 @@ type Authenticator interface {
 	Authenticate(r *http.Request) (any, error)
 }
 
+type Authorizator interface {
+	Authorize(identity any, r *http.Request) error
+}
+
 func Authentication(authenticator Authenticator) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			identity := 2
+			/* TODO uncomment me
 			identity, err := authenticator.Authenticate(r)
 			if err != nil {
 				ae := ErrHTTP{
@@ -76,23 +86,27 @@ func Authentication(authenticator Authenticator) func(next http.Handler) http.Ha
 				renderJson(w, ae.StatusCode, ae)
 				return
 			}
+			*/
 			ctx := context.WithValue(r.Context(), Authenticated, identity)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-/*
-func getBearerTokenFromHeader(r *http.Request) (string, error) {
-	const (
-		headerAuthorization = "Authorization"
-		headerPrefixBearer  = "BEARER"
-	)
-	bearer := r.Header.Get(headerAuthorization)
-	size := len(headerPrefixBearer) + 1
-	if len(bearer) > size && strings.ToUpper(bearer[0:size-1]) == headerPrefixBearer {
-		return bearer[size:], nil
+func Authorization(authorizator Authorizator) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			identity := IdentityFromRequestContext(r)
+			if err := authorizator.Authorize(identity, r); err != nil {
+				ae := ErrHTTP{
+					http.StatusForbidden,
+					http.StatusText(http.StatusForbidden),
+					nil,
+				}
+				renderJson(w, ae.StatusCode, ae)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
 	}
-	return "", err
 }
-*/

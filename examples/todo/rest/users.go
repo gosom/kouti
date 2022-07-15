@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -135,6 +136,7 @@ func (o *UserSrv) InsertRandomUsers(ctx context.Context, num int) error {
 	defer tx.Rollback(ctx)
 	q := o.DB.WithTx(tx)
 	seen := make(map[string]bool)
+
 	for i := 0; i < num; i++ {
 		var email string
 		for {
@@ -144,12 +146,20 @@ func (o *UserSrv) InsertRandomUsers(ctx context.Context, num int) error {
 				break
 			}
 		}
-		_, err := q.CreateUser(ctx, orm.CreateUserParams{
+		u, err := q.CreateUser(ctx, orm.CreateUserParams{
 			Fname:  gofakeit.FirstName(),
 			Lname:  gofakeit.LastName(),
 			Email:  email,
 			Passwd: gofakeit.Password(true, true, true, true, false, 10),
 		})
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(ctx,
+			`INSERT INTO casbin(id, ptype, v0, v1, v2, v3, v4, v5) VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+			i+1, "p", fmt.Sprintf("%d", u.ID),
+			fmt.Sprintf("/api/v1/users/%d", u.ID), "(GET)|(DELETE)", "", "", "",
+		)
 		if err != nil {
 			return err
 		}
