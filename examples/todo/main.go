@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 
 	"github.com/gosom/kouti/dbdriver"
 	"github.com/gosom/kouti/httpserver"
@@ -12,6 +13,9 @@ import (
 	"github.com/gosom/kouti/examples/todo/db"
 	"github.com/gosom/kouti/examples/todo/rest"
 )
+
+//go:embed docs/swagger.json
+var specFs embed.FS
 
 func main() {
 	defer utils.ExitRecover()
@@ -36,6 +40,12 @@ func run() error {
 
 	router, err := rest.NewRouter(dbconn, web.RouterConfig{
 		Log: log,
+		SwaggerUI: &web.SwaggerUIConfig{
+			SpecName: "TODO API",
+			SpecFile: "/docs/swagger.json",
+			Path:     "/docs",
+			SpecFS:   specFs,
+		},
 	})
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package web
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,9 +22,11 @@ type RouterConfig struct {
 	MethodNotAllowedHandler func(w http.ResponseWriter, r *http.Request)
 	// Log
 	Log zerolog.Logger
+	// SwaggerUI
+	SwaggerUI *SwaggerUIConfig
 }
 
-func NewRouter(cfg RouterConfig) *chi.Mux {
+func NewRouter(cfg RouterConfig) (*chi.Mux, error) {
 	cfg = setupDefaults(cfg)
 	r := chi.NewRouter()
 	for i := range cfg.Middlewares {
@@ -31,7 +34,19 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 	}
 	r.NotFound(cfg.NotFoundHandler)
 	r.MethodNotAllowed(cfg.MethodNotAllowedHandler)
-	return r
+	if cfg.SwaggerUI != nil {
+		h, err := NewSwaggerUI(cfg.SwaggerUI)
+		if err != nil {
+			return nil, err
+		}
+		sp := cfg.SwaggerUI.Path
+		if !strings.HasSuffix(sp, "/") {
+			sp += "/"
+		}
+		sp += "*"
+		r.Handle(sp, http.StripPrefix(cfg.SwaggerUI.Path, h))
+	}
+	return r, nil
 }
 
 func setupDefaults(cfg RouterConfig) RouterConfig {

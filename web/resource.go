@@ -70,7 +70,7 @@ func (h ResourceHandler[Q, P, R]) Delete(w http.ResponseWriter, r *http.Request)
 		h.Json(w, ae.StatusCode, ae)
 		return
 	}
-	h.Json(w, http.StatusOK, nil)
+	h.Json(w, http.StatusNoContent, nil)
 }
 
 // Put

@@ -11,8 +11,27 @@ import (
 	"github.com/gosom/kouti/examples/todo/db"
 )
 
+// @title Todo API based on kouti
+// @version 0.1
+// @description This is a sample server todo server.
+// @description You can visit the GitHub repository at https://github.com/gosom/kouti
+
+// @contact.name Giorgos
+// @contact.url https://github.com/gosom/kouti/issues
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api/v1/
+// @accept json
+// @produce json
+// @query.collection.format multi
 func NewRouter(db db.DB, cfg web.RouterConfig) (*chi.Mux, error) {
-	router := web.NewRouter(cfg)
+	router, err := web.NewRouter(cfg)
+	if err != nil {
+		return nil, err
+	}
 	authenticator, err := auth.New(auth.AuthenticatorConfig{
 		JwtSignKey: "secret",
 		Log:        logger.NewSubLogger(cfg.Log, "Authenticator"),
@@ -46,14 +65,6 @@ func NewRouter(db db.DB, cfg web.RouterConfig) (*chi.Mux, error) {
 			&us,
 		)
 
-		// Admin routes
-		router.Route("/api/v1/admin", func(r chi.Router) {
-			router.Route("/users", func(r chi.Router) {
-				r.Get("/", h.Select)
-				r.Get("/search", h.Search)
-			})
-		})
-
 		// User Routes
 		router.Route("/api/v1/users", func(r chi.Router) {
 			// public
@@ -63,8 +74,12 @@ func NewRouter(db db.DB, cfg web.RouterConfig) (*chi.Mux, error) {
 			r.Group(func(r chi.Router) {
 				r.Use(web.Authentication(authenticator))
 				r.Use(web.Authorization(authorizator))
+
+				r.Get("/", h.Select)
 				r.Get(`/{id:\d+}`, h.Get)
+				r.Get("/search", h.Search)
 				r.Delete(`/{id:\d+}`, h.Delete)
+
 			})
 
 		})
