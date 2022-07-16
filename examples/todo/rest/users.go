@@ -285,6 +285,15 @@ func (o *UserSrv) SearchResources(ctx context.Context, qp QueryParams) ([]User, 
 	return items, nil
 }
 
+// PerformLogin login with email password
+// @summary returns a JWT access token
+// @id login-user
+// @produce json
+// @param Body body UserLogin true "the body to login a user"
+// @success 200 {array} L
+// @failure 400 {object} web.ErrHTTP
+// @failure 500 {object} web.ErrHTTP
+// @router /users/login [post]
 func (o *UserSrv) PerformLogin(ctx context.Context, p UserLogin) (L, error) {
 	qp := db.UserLoginParams{
 		Email:  p.Email,

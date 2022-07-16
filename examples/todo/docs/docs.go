@@ -139,6 +139,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/login": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "returns a JWT access token",
+                "operationId": "login-user",
+                "parameters": [
+                    {
+                        "description": "the body to login a user",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.UserLogin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/rest.L"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrHTTP"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrHTTP"
+                        }
+                    }
+                }
+            }
+        },
         "/users/search": {
             "get": {
                 "produces": [
@@ -264,6 +307,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "rest.L": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                }
+            }
+        },
         "rest.User": {
             "type": "object",
             "properties": {
@@ -314,6 +365,23 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 4,
                     "example": "Paparis"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "Ar9Sp7891!!#"
+                }
+            }
+        },
+        "rest.UserLogin": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "aris.paparis@example.com"
                 },
                 "password": {
                     "type": "string",

@@ -1,7 +1,7 @@
 default:
 	echo "use one command"
 
-docs:
+swaggen:
 	swag init -g rest/routes.go --parseDependency
 
 generate:

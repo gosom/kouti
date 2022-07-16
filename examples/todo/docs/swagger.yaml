@@ -2,6 +2,11 @@ basePath: /api/v1/
 consumes:
 - application/json
 definitions:
+  rest.L:
+    properties:
+      accessToken:
+        type: string
+    type: object
   rest.User:
     properties:
       created_at:
@@ -43,6 +48,18 @@ definitions:
     - email
     - firstName
     - lastName
+    - password
+    type: object
+  rest.UserLogin:
+    properties:
+      email:
+        example: aris.paparis@example.com
+        type: string
+      password:
+        example: Ar9Sp7891!!#
+        type: string
+    required:
+    - email
     - password
     type: object
   web.ErrHTTP:
@@ -187,6 +204,34 @@ paths:
           schema:
             $ref: '#/definitions/web.ErrHTTP'
       summary: Returns user with id
+  /users/login:
+    post:
+      operationId: login-user
+      parameters:
+      - description: the body to login a user
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/rest.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/rest.L'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+      summary: returns a JWT access token
   /users/search:
     get:
       operationId: search-users
