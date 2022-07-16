@@ -74,3 +74,41 @@ func (o DB) SearchUsers(ctx context.Context, p UserFtsParams) ([]orm.ListUsersRo
 	}
 	return items, nil
 }
+
+// This complexity is done in order to apply bcrypt always
+// this way we make enumeration attacks difficult
+// thanks https://daniel.fone.net.nz/blog/2020/09/09/timing-safe-bcrypt-authentication-in-postgresql/
+const userLoginQ = `
+WITH
+target_user AS (
+  SELECT id, enc_passwd
+  FROM (
+    SELECT id, enc_passwd from users WHERE email = $1
+    UNION ALL
+    SELECT NULL, gen_salt('bf')
+  ) users
+  LIMIT 1
+),
+valid_user AS (
+  SELECT id FROM target_user WHERE enc_passwd = crypt($2, enc_passwd)
+)
+SELECT id, fname, lname, email, created_at FROM users NATURAL JOIN valid_user LIMIT 1
+`
+
+type UserLoginParams struct {
+	Email  string
+	Passwd string
+}
+
+func (o DB) GetUserByEmailPasswd(ctx context.Context, p UserLoginParams) (orm.User, error) {
+	row := o.RawConn().QueryRow(ctx, userLoginQ, p.Email, p.Passwd)
+	var ans orm.User
+	err := row.Scan(
+		&ans.ID,
+		&ans.Fname,
+		&ans.Lname,
+		&ans.Email,
+		&ans.CreatedAt,
+	)
+	return ans, err
+}

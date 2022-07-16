@@ -57,11 +57,16 @@ func NewRouter(db db.DB, cfg web.RouterConfig) (*chi.Mux, error) {
 	}
 	{
 		us := UserSrv{
-			Log: logger.NewSubLogger(cfg.Log, "UserSrv"),
-			DB:  db,
+			Log:  logger.NewSubLogger(cfg.Log, "UserSrv"),
+			DB:   db,
+			Auth: authenticator,
 		}
 		h := NewUserHandler(
 			logger.NewSubLogger(cfg.Log, "UserHandler"),
+			&us,
+		)
+		lh := NewAuthHandler(
+			logger.NewSubLogger(cfg.Log, "AuthHandler"),
 			&us,
 		)
 
@@ -69,6 +74,7 @@ func NewRouter(db db.DB, cfg web.RouterConfig) (*chi.Mux, error) {
 		router.Route("/api/v1/users", func(r chi.Router) {
 			// public
 			r.Post("/", h.Post)
+			r.Post("/login", lh.Login)
 
 			// logged in
 			r.Group(func(r chi.Router) {

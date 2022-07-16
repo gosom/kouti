@@ -74,8 +74,6 @@ type Authorizator interface {
 func Authentication(authenticator Authenticator) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			identity := 2
-			/* TODO uncomment me
 			identity, err := authenticator.Authenticate(r)
 			if err != nil {
 				ae := ErrHTTP{
@@ -86,7 +84,6 @@ func Authentication(authenticator Authenticator) func(next http.Handler) http.Ha
 				renderJson(w, ae.StatusCode, ae)
 				return
 			}
-			*/
 			ctx := context.WithValue(r.Context(), Authenticated, identity)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

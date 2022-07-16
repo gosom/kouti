@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -38,6 +39,22 @@ type UserCreate struct {
 	Password string `json:"password" validate:"required,password" example:"Ar9Sp7891!!#"`
 }
 
+type UserLogin struct {
+	Email    string `json:"email" validate:"required,email" example:"aris.paparis@example.com"`
+	Password string `json:"password" validate:"required" example:"Ar9Sp7891!!#"`
+}
+
+type L struct {
+	AccessToken string `json:"accessToken"`
+}
+
+func NewAuthHandler(log zerolog.Logger, srv *UserSrv) web.AuthHandler[UserLogin, L] {
+	h := web.AuthHandler[UserLogin, L]{}
+	h.Logger = log
+	h.Srv = srv
+	return h
+}
+
 func NewUserHandler(log zerolog.Logger, srv *UserSrv) web.ResourceHandler[UserCreate, QueryParams, User] {
 	h := web.ResourceHandler[UserCreate, QueryParams, User]{}
 	h.Logger = log
@@ -45,9 +62,14 @@ func NewUserHandler(log zerolog.Logger, srv *UserSrv) web.ResourceHandler[UserCr
 	return h
 }
 
+type IAuth interface {
+	GetAccessToken(u any) (string, error)
+}
+
 type UserSrv struct {
-	Log zerolog.Logger
-	DB  db.DB
+	Log  zerolog.Logger
+	DB   db.DB
+	Auth IAuth
 }
 
 // TODO if swag was supporting generics this code could have been moved
@@ -261,4 +283,28 @@ func (o *UserSrv) SearchResources(ctx context.Context, qp QueryParams) ([]User, 
 		}
 	}
 	return items, nil
+}
+
+func (o *UserSrv) PerformLogin(ctx context.Context, p UserLogin) (L, error) {
+	qp := db.UserLoginParams{
+		Email:  p.Email,
+		Passwd: p.Password,
+	}
+	u, err := o.DB.GetUserByEmailPasswd(ctx, qp)
+	if err != nil {
+		ae := web.ErrHTTP{
+			StatusCode: http.StatusUnauthorized,
+			Message:    http.StatusText(http.StatusUnauthorized),
+		}
+		return L{}, ae
+	}
+	accessToken, err := o.Auth.GetAccessToken(u.ID)
+	if err != nil {
+		ae := web.ErrHTTP{
+			StatusCode: http.StatusUnauthorized,
+			Message:    http.StatusText(http.StatusUnauthorized),
+		}
+		return L{}, ae
+	}
+	return L{AccessToken: accessToken}, nil
 }
