@@ -2,14 +2,17 @@ package um
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/rs/zerolog"
+
 	"github.com/gosom/kouti/dbdriver"
 	"github.com/gosom/kouti/logger"
 	"github.com/gosom/kouti/testutils"
-	"github.com/rs/zerolog"
 )
 
 var (
@@ -258,6 +261,12 @@ func TestLogin(t *testing.T) {
 	}
 	if lu.ID != u.ID {
 		t.Errorf("expected to login")
+		return
+	}
+
+	lu, err = srv.Login(context.Background(), rp.Identity, "wrong password")
+	if !errors.Is(err, pgx.ErrNoRows) {
+		t.Error("expected not to be able to login")
 		return
 	}
 }
