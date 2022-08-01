@@ -35,12 +35,18 @@ type SelectUserParams struct {
 type UpdateUserParams struct {
 }
 
+type UserLoginParams struct {
+	Identity string
+	Passwd   string
+}
+
 type IUserRepo interface {
 	Insert(ctx context.Context, conn dbdriver.DBTX, p InsertUserParams) (User, error)
 	Get(ctx context.Context, conn dbdriver.DBTX, p GetUserParams) (User, error)
 	Select(ctx context.Context, conn dbdriver.DBTX, p SelectUserParams) ([]User, error)
 	Delete(ctx context.Context, conn dbdriver.DBTX, p GetUserParams) error
 	Update(ctx context.Context, conn dbdriver.DBTX, p UpdateUserParams) (User, error)
+	Login(ctx context.Context, conn dbdriver.DBTX, p UserLoginParams) (User, error)
 }
 
 type UserRepo struct {
@@ -60,18 +66,6 @@ func (u *UserRepo) Insert(ctx context.Context, conn dbdriver.DBTX, p InsertUserP
 		return User{}, err
 	}
 	return user, nil
-}
-
-func (u *UserRepo) rowToUser(row dbdriver.RowScanner) (user User, err error) {
-	err = row.Scan(
-		&user.ID,
-		&user.UID,
-		&user.Identity,
-		&user.EncPasswd,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-	return
 }
 
 func (u *UserRepo) Get(ctx context.Context, conn dbdriver.DBTX, p GetUserParams) (User, error) {
@@ -104,4 +98,21 @@ func (u *UserRepo) Delete(ctx context.Context, conn dbdriver.DBTX, p GetUserPara
 func (u *UserRepo) Update(ctx context.Context, conn dbdriver.DBTX, p UpdateUserParams) (User, error) {
 	// TODO
 	return User{}, nil
+}
+
+func (u *UserRepo) Login(ctx context.Context, conn dbdriver.DBTX, p UserLoginParams) (User, error) {
+	row := conn.QueryRow(ctx, usersLoginQ, p.Identity, p.Passwd)
+	return u.rowToUser(row)
+}
+
+func (u *UserRepo) rowToUser(row dbdriver.RowScanner) (user User, err error) {
+	err = row.Scan(
+		&user.ID,
+		&user.UID,
+		&user.Identity,
+		&user.EncPasswd,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	return
 }

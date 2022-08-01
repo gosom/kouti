@@ -228,6 +228,40 @@ func TestDeleteUser(t *testing.T) {
 	}
 }
 
+func TestLogin(t *testing.T) {
+	if err := srv.InitSchema(context.Background()); err != nil {
+		panic(err)
+	}
+	defer resetDb()
+	rp := RegisterUserOpts{
+		Identity: "giorgos@example.com",
+		Passwd:   "password",
+		Roles:    []string{"admin"},
+	}
+	u, err1, err2 := srv.RegisterUser(context.Background(), rp)
+	if err1 != nil {
+		t.Error(err1)
+		return
+	}
+	if err2 != nil {
+		t.Error(err2)
+		return
+	}
+	lu, err := srv.Login(context.Background(), rp.Identity, rp.Passwd)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if lu.Identity != rp.Identity {
+		t.Errorf("expected to login")
+		return
+	}
+	if lu.ID != u.ID {
+		t.Errorf("expected to login")
+		return
+	}
+}
+
 // ==========================================================================
 
 func resetDb() {

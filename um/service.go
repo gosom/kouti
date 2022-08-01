@@ -140,3 +140,11 @@ func (s *Service) SelectUsers(ctx context.Context, p SelectUserParams) ([]User, 
 func (s *Service) DeleteUser(ctx context.Context, p GetUserParams) error {
 	return s.Users.Delete(ctx, s.db.RawConn(), p)
 }
+
+func (s *Service) Login(ctx context.Context, u string, p string) (User, error) {
+	param := UserLoginParams{
+		Identity: u,
+		Passwd:   p,
+	}
+	return s.Users.Login(ctx, s.db.RawConn(), param)
+}
