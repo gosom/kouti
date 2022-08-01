@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -21,6 +22,7 @@ type ResourceHandler[Q, P, R any] struct {
 // Get GET
 func (h ResourceHandler[Q, P, R]) Get(w http.ResponseWriter, r *http.Request) {
 	resourceId, err := h.UrlParamInt(r, "id")
+	fmt.Println("FIRST", resourceId)
 	if err != nil {
 		ae := NewBadRequestError("cannot fetch id from url")
 		h.Json(w, ae.StatusCode, ae)

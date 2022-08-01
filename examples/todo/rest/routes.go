@@ -52,6 +52,7 @@ func NewRouter(db db.DB, cfg web.RouterConfig) (*chi.Mux, error) {
 			Log:               logger.NewSubLogger(cfg.Log, "Authorizator"),
 		},
 	)
+	_ = authorizator
 	if err != nil {
 		return nil, err
 	}
@@ -71,27 +72,60 @@ func NewRouter(db db.DB, cfg web.RouterConfig) (*chi.Mux, error) {
 		)
 
 		// User Routes
-		router.Route("/api/v1/users", func(r chi.Router) {
+		router.Route("/api/v1/{asset:users}", func(r chi.Router) {
+
 			// public
-			r.Post("/", h.Post)
-			r.Post("/login", lh.Login)
+			r.Group(func(r chi.Router) {
+				r.Use(web.Authorization(authorizator))
+				r.Post("/", h.Post)
+				r.Post("/login", lh.Login)
+			})
 
 			// logged in
 			r.Group(func(r chi.Router) {
 				r.Use(web.Authentication(authenticator))
-				r.Use(web.Authorization(authorizator))
 
-				r.Get("/", h.Select)
-				r.Get(`/{id:\d+}`, h.Get)
-				r.Get("/search", h.Search)
-				r.Delete(`/{id:\d+}`, h.Delete)
+				// Admin
+				r.Group(func(r chi.Router) {
+					r.Use(web.Authorization(authorizator))
+					r.Get("/", h.Select)
+				})
+
+				// user
+				r.Route(`/{id:\d+}`, func(r chi.Router) {
+					r.Use(web.Authorization(authorizator))
+					r.Get(`/`, h.Get)
+				})
 
 			})
 
+			/*
+				r.Group(func(r chi.Router) {
+					r.Use(web.Authentication(authenticator))
+					r.Use(web.Authorization(authorizator))
+					r.Get("/", h.Select)
+					r.Get(`/{id:\d+}`, h.Get)
+					r.Get("/search", h.Search)
+					r.Delete(`/{id:\d+}`, h.Delete)
+
+				})*/
+
+			/*
+				r.Route("/{id}", func(r chi.Router) {
+					r.Use(web.Authentication(authenticator))
+					r.Use(web.Authorization(authorizator))
+					r.Get("/", h.Get)
+					/*
+						r.Route("/{asset:todo}", func(r chi.Router) {
+							r.Get(`/{id:\d+}`, func(w http.ResponseWriter, r *http.Request) {
+								todoId := chi.URLParam(r, "id")
+								fmt.Println("IN TODO", todoId)
+							})
+						})
+				})
+			*/
 		})
 
-		router.Route("/api/v1/todo", func(r chi.Router) {
-		})
 	}
 	return router, nil
 }

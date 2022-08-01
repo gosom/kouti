@@ -3,10 +3,12 @@ package web
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 )
@@ -68,22 +70,26 @@ type Authenticator interface {
 }
 
 type Authorizator interface {
-	Authorize(identity any, r *http.Request) error
+	HasPermission(identity any, action string, asset string) error
 }
 
 func Authentication(authenticator Authenticator) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			identity, err := authenticator.Authenticate(r)
-			if err != nil {
-				ae := ErrHTTP{
-					http.StatusUnauthorized,
-					http.StatusText(http.StatusUnauthorized),
-					nil,
+			fmt.Println("EEEEE")
+			identity := 1
+			/*
+				identity, err := authenticator.Authenticate(r)
+				if err != nil {
+					ae := ErrHTTP{
+						http.StatusUnauthorized,
+						http.StatusText(http.StatusUnauthorized),
+						nil,
+					}
+					renderJson(w, ae.StatusCode, ae)
+					return
 				}
-				renderJson(w, ae.StatusCode, ae)
-				return
-			}
+			*/
 			ctx := context.WithValue(r.Context(), Authenticated, identity)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -94,7 +100,12 @@ func Authorization(authorizator Authorizator) func(next http.Handler) http.Handl
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			identity := IdentityFromRequestContext(r)
-			if err := authorizator.Authorize(identity, r); err != nil {
+			action := r.Method
+			asset := "/" + chi.URLParam(r, "asset")
+			if resourceID := chi.URLParam(r, "id"); resourceID != "" {
+				asset += "/" + resourceID
+			}
+			if err := authorizator.HasPermission(identity, action, asset); err != nil {
 				ae := ErrHTTP{
 					http.StatusForbidden,
 					http.StatusText(http.StatusForbidden),

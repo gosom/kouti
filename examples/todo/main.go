@@ -3,15 +3,14 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
 
 	"github.com/gosom/kouti/dbdriver"
-	"github.com/gosom/kouti/httpserver"
 	"github.com/gosom/kouti/logger"
+	"github.com/gosom/kouti/um"
 	"github.com/gosom/kouti/utils"
-	"github.com/gosom/kouti/web"
 
 	"github.com/gosom/kouti/examples/todo/db"
-	"github.com/gosom/kouti/examples/todo/rest"
 )
 
 //go:embed docs/swagger.json
@@ -38,23 +37,62 @@ func run() error {
 	}
 	defer dbconn.Close()
 
-	router, err := rest.NewRouter(dbconn, web.RouterConfig{
-		Log: log,
-		SwaggerUI: &web.SwaggerUIConfig{
-			SpecName: "TODO API",
-			SpecFile: "/docs/swagger.json",
-			Path:     "/docs",
-			SpecFS:   specFs,
-		},
+	// we first setup user mananagement service
+
+	users := um.NewService(um.Config{
+		Log:         logger.NewSubLogger(log, "Users"),
+		DB:          dbconn.DB,
+		SystemRoles: []string{"admin", "member"},
 	})
+
+	if err := users.InitSchema(ctx); err != nil {
+		return err
+	}
+
+	rp := um.RegisterUserOpts{
+		Identity: "giorgos@example.com",
+		Passwd:   "123abc!",
+		Roles:    []string{"admin"},
+
+		BeforeCommit: func(ctx context.Context, conn dbdriver.DBTX, u um.User) error {
+			fmt.Println("before commit")
+			return nil
+		},
+		AfterCommit: func(ctx context.Context, conn dbdriver.DBTX, u um.User) error {
+			fmt.Println("after commit")
+			return nil
+		},
+	}
+
+	_, err, afterHookErr := users.RegisterUser(ctx, rp)
 	if err != nil {
 		return err
 	}
-	cfg := httpserver.Config{
-		Host:   "localhost:8080",
-		Router: router,
-		UseTLS: false,
+	if afterHookErr != nil {
+		return err
 	}
 
-	return httpserver.Run(cfg)
+	return nil
+
+	/*
+		router, err := rest.NewRouter(dbconn, web.RouterConfig{
+			Log: log,
+			SwaggerUI: &web.SwaggerUIConfig{
+				SpecName: "TODO API",
+				SpecFile: "/docs/swagger.json",
+				Path:     "/docs",
+				SpecFS:   specFs,
+			},
+		})
+		if err != nil {
+			return err
+		}
+		cfg := httpserver.Config{
+			Host:   "localhost:8080",
+			Router: router,
+			UseTLS: false,
+		}
+
+		return httpserver.Run(cfg)
+	*/
 }

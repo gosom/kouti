@@ -1,10 +1,9 @@
 package auth
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
@@ -23,11 +22,14 @@ r = sub, obj, act
 [policy_definition]
 p = sub, obj, act
 
+[role_definition]
+g = _, _
+
 [policy_effect]
 e = some(where (p.eft == allow))
 
 [matchers]
-m = r.sub == p.sub && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
+m = (g(r.sub, p.sub) || keyMatch(r.sub, p.sub)) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)
 `
 
 func NewEnforcer(r io.Reader, a persist.Adapter) (*casbin.Enforcer, error) {
@@ -62,28 +64,46 @@ type casbinAuthorizator struct {
 }
 
 // TODO perhaps use generics
-func (a *casbinAuthorizator) Authorize(identity any, r *http.Request) error {
-	// TODO may use select with type ?
-	sub := fmt.Sprintf("%v", identity)
-	a.log.Info().Msgf("authorize %s", sub)
-	// TODO Replace with filtered policy based on request ?
+func (a *casbinAuthorizator) HasPermission(identity any, action string, asset string) error {
+	roles := []string{"visitor"}
+	if identity != nil {
+		roles = append(roles, "member")
+	}
+	a.log.Info().Msgf("authorize %v %s %s %v", identity, action, asset, roles)
 	if err := a.e.LoadPolicy(); err != nil {
 		a.log.Error().Err(err)
 		return err
 	}
-	ok, err := a.e.Enforce(sub, r.URL.Path, r.Method)
-	if err != nil {
-		a.log.Error().Err(err).Msg("err")
-		return err
+	for _, role := range roles {
+		ok, err := a.e.Enforce(role, asset, action)
+		if err != nil {
+			a.log.Error().Err(err).Msg("err")
+			return err
+		}
+		if ok {
+			return nil
+		}
 	}
-	if !ok {
-		err := fmt.Errorf("%s not authorized to access %s %s",
-			sub, r.URL.Path, r.Method,
-		)
-		a.log.Error().Err(err)
-		return err
-	}
-	return nil
+	a.log.Info().Msgf("not authorized")
+	return errors.New("unauthorized")
+	// TODO may use select with type ?
+	/*
+		sub := fmt.Sprintf("%v", identity)
+		a.log.Info().Msgf("authorize %s", sub)
+		// TODO Replace with filtered policy based on request ?
+		ok, err := a.e.Enforce(sub, r.URL.Path, r.Method)
+		if err != nil {
+			a.log.Error().Err(err).Msg("err")
+			return err
+		}
+		if !ok {
+			err := fmt.Errorf("%s not authorized to access %s %s",
+				sub, r.URL.Path, r.Method,
+			)
+			a.log.Error().Err(err)
+			return err
+		}
+	*/
 }
 
 func newCasbinAuthorizator(log zerolog.Logger, a persist.Adapter, r io.Reader) (*casbinAuthorizator, error) {
