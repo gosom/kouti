@@ -48,7 +48,7 @@ func (s *Service) InitSchema(ctx context.Context) error {
 		return err
 	}
 	defer tx.Rollback(ctx)
-	if err := s.Schema.CreateTables(ctx, tx); err != nil {
+	if err := s.Schema.Up(ctx, tx); err != nil {
 		return err
 	}
 	if len(s.systemRoles) > 0 {

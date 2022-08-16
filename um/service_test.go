@@ -274,9 +274,8 @@ func TestLogin(t *testing.T) {
 // ==========================================================================
 
 func resetDb() {
-	tables := []string{"users_roles", "users", "roles"}
-	q := "drop table %s"
-	for _, t := range tables {
-		_, _ = testconn.RawConn().Exec(context.Background(), fmt.Sprintf(q, t))
+	fmt.Println("cleaning testdb")
+	if err := srv.Schema.Down(context.Background(), testconn.RawConn()); err != nil {
+		fmt.Println("error cleaning:", err.Error())
 	}
 }
