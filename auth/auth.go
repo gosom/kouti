@@ -8,6 +8,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
+var (
+	ErrInvalidAuthToken = errors.New("invalid authentication token")
+)
+
 type AuthenticatorConfig struct {
 	// When set it uses JWT authentication
 	JwtSignKey          string
@@ -18,8 +22,8 @@ type AuthenticatorConfig struct {
 }
 
 type Authenticator interface {
-	Authenticate(r *http.Request) (any, error)
-	GetAccessToken(u any) (string, error)
+	Authenticate(r *http.Request) (string, error)
+	GetAccessToken(u string) (string, error)
 }
 
 func New(cfg AuthenticatorConfig) (Authenticator, error) {

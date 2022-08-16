@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,7 +11,7 @@ import (
 )
 
 type JwtClaims struct {
-	User  any                    `json:"user`
+	User  string                 `json:"user`
 	Extra map[string]interface{} `json:"extra,omitempty"`
 	jwt.StandardClaims
 }
@@ -34,21 +33,21 @@ func newJwtAuthenticator(log zerolog.Logger, signkey, issuer string, ad time.Dur
 	return &ans
 }
 
-func (o *jwtAuthenticator) Authenticate(r *http.Request) (any, error) {
+func (o *jwtAuthenticator) Authenticate(r *http.Request) (string, error) {
 	token, err := o.getBearerTokenFromHeader(r)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	return o.validateAccessToken(o.signkey, token)
 }
 
-func (o *jwtAuthenticator) GetAccessToken(u any) (string, error) {
+func (o *jwtAuthenticator) GetAccessToken(u string) (string, error) {
 	claims := JwtClaims{
 		User:  u,
 		Extra: nil,
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    o.issuer,
-			Subject:   fmt.Sprintf("%v", u),
+			Subject:   u,
 			ExpiresAt: time.Now().UTC().Add(o.aduration).Unix(),
 		},
 	}
@@ -66,24 +65,25 @@ func (o *jwtAuthenticator) getBearerTokenFromHeader(r *http.Request) (string, er
 	if len(bearer) > size && strings.ToUpper(bearer[0:size-1]) == headerPrefixBearer {
 		return bearer[size:], nil
 	}
-	return "", errors.New("invalid " + headerAuthorization + " header")
+	return "", fmt.Errorf("%w : invalid %s header", ErrInvalidAuthToken, headerAuthorization)
 }
 
-func (o *jwtAuthenticator) validateAccessToken(signingKey string, accessToken string) (any, error) {
+func (o *jwtAuthenticator) validateAccessToken(signingKey string, accessToken string) (string, error) {
 	token, err := jwt.ParseWithClaims(accessToken, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return "", fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(signingKey), nil
 	})
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("%w : %s", ErrInvalidAuthToken, err.Error())
 	}
+
 	payload, ok := token.Claims.(*JwtClaims)
 	if ok && token.Valid {
 		return payload.User, nil
 	}
 
-	return payload.User, errors.New("invalid token")
+	return payload.User, ErrInvalidAuthToken
 }
