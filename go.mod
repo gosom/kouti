@@ -3,7 +3,6 @@ module github.com/gosom/kouti
 go 1.18
 
 require (
-	github.com/brianvoe/gofakeit/v6 v6.17.0
 	github.com/casbin/casbin/v2 v2.51.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-playground/validator/v10 v10.11.0
@@ -14,6 +13,7 @@ require (
 	github.com/jackc/pgconn v1.12.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v4 v4.16.1
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/rs/zerolog v1.27.0
 	github.com/swaggo/swag v1.8.3
 	github.com/testcontainers/testcontainers-go v0.13.0

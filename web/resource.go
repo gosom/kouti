@@ -2,14 +2,13 @@ package web
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 )
 
 type IResourceService[Q, P, R any] interface {
 	CreateResource(ctx context.Context, p Q) (R, error)
-	GetResourceByID(ctx context.Context, id int) (R, error)
-	DeleteResourceByID(ctx context.Context, id int) error
+	GetResourceByID(ctx context.Context, id string) (R, error)
+	DeleteResourceByID(ctx context.Context, id string) error
 	SelectResources(ctx context.Context, p P) ([]R, error)
 	SearchResources(ctx context.Context, p P) ([]R, error)
 }
@@ -21,9 +20,8 @@ type ResourceHandler[Q, P, R any] struct {
 
 // Get GET
 func (h ResourceHandler[Q, P, R]) Get(w http.ResponseWriter, r *http.Request) {
-	resourceId, err := h.UrlParamInt(r, "id")
-	fmt.Println("FIRST", resourceId)
-	if err != nil {
+	resourceId := h.URLParamString(r, "id")
+	if len(resourceId) == 0 {
 		ae := NewBadRequestError("cannot fetch id from url")
 		h.Json(w, ae.StatusCode, ae)
 		return
@@ -61,8 +59,8 @@ func (h ResourceHandler[Q, P, R]) Post(w http.ResponseWriter, r *http.Request) {
 
 // Delete
 func (h ResourceHandler[Q, P, R]) Delete(w http.ResponseWriter, r *http.Request) {
-	resourceId, err := h.UrlParamInt(r, "id")
-	if err != nil {
+	resourceId := h.URLParamString(r, "id")
+	if len(resourceId) == 0 {
 		ae := NewBadRequestError("cannot fetch id from url")
 		h.Json(w, ae.StatusCode, ae)
 		return

@@ -16,3 +16,7 @@ func (d DefaultHandler) MethodNotAllowed(w http.ResponseWriter, r *http.Request)
 	e := ErrHTTP{http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed), nil}
 	d.Json(w, e.StatusCode, e)
 }
+
+func (d DefaultHandler) Health(w http.ResponseWriter, r *http.Request) {
+	d.Json(w, http.StatusOK, map[string]bool{"healthy": true})
+}

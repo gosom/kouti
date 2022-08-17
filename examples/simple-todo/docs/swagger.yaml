@@ -2,55 +2,54 @@ basePath: /api/v1/
 consumes:
 - application/json
 definitions:
-  rest.L:
+  todos.Todo:
+    type: object
+  todos.TodoCreate:
+    type: object
+  um.Role:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  users.L:
     properties:
       accessToken:
         type: string
     type: object
-  rest.User:
+  users.User:
     properties:
-      created_at:
-        example: "2022-07-16T00:53:16.535668Z"
-        format: date-time
+      createdAt:
         type: string
       email:
-        example: aris.paparis@example.com
-        type: string
-      firstName:
-        example: Aris
         type: string
       id:
-        example: 1
-        type: integer
-      lastName:
-        example: Paparis
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/um.Role'
+        type: array
+      updatedAt:
         type: string
     type: object
-  rest.UserCreate:
+  users.UserCreate:
     properties:
       email:
         example: aris.paparis@example.com
-        type: string
-      firstName:
-        example: Aris
-        maxLength: 100
-        minLength: 4
-        type: string
-      lastName:
-        example: Paparis
-        maxLength: 100
-        minLength: 4
         type: string
       password:
         example: Ar9Sp7891!!#
         type: string
     required:
     - email
-    - firstName
-    - lastName
     - password
     type: object
-  rest.UserLogin:
+  users.UserLogin:
     properties:
       email:
         example: aris.paparis@example.com
@@ -94,14 +93,14 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/rest.UserCreate'
+          $ref: '#/definitions/users.UserCreate'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/rest.User'
+            $ref: '#/definitions/users.User'
         "400":
           description: Bad Request
           schema:
@@ -146,7 +145,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/rest.User'
+              $ref: '#/definitions/users.User'
             type: array
         "400":
           description: Bad Request
@@ -161,11 +160,11 @@ paths:
     delete:
       operationId: delete-user
       parameters:
-      - description: the id of the user to fetch
+      - description: the id of the user to delete
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -187,14 +186,14 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rest.User'
+            $ref: '#/definitions/users.User'
         "400":
           description: Bad Request
           schema:
@@ -213,7 +212,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/rest.UserLogin'
+          $ref: '#/definitions/users.UserLogin'
       produces:
       - application/json
       responses:
@@ -221,7 +220,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/rest.L'
+              $ref: '#/definitions/users.L'
             type: array
         "400":
           description: Bad Request
@@ -255,7 +254,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/rest.User'
+              $ref: '#/definitions/users.User'
             type: array
         "400":
           description: Bad Request
