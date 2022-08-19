@@ -50,6 +50,7 @@ func (h ResourceHandler[Q, P, R]) Post(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := h.Srv.CreateResource(r.Context(), payload)
 	if err != nil {
+		h.Logger.Error().AnErr("error", err).Msg("on CreateResource")
 		ae := NewErrHTTPFromError(err)
 		h.Json(w, ae.StatusCode, ae)
 		return

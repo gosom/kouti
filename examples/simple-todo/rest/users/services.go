@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/gosom/kouti/um"
 	"github.com/rs/zerolog"
 )
@@ -10,6 +11,15 @@ import (
 type UserSrv struct {
 	Log zerolog.Logger
 	Srv *um.Service
+}
+
+func umToUser(u um.User) (ans User) {
+	ans.ID = u.UID
+	ans.Email = u.Identity
+	ans.Roles = u.Roles
+	ans.CreatedAt = u.CreatedAt
+	ans.UpdatedAt = u.UpdatedAt
+	return
 }
 
 // CreateResource Creates a user resource
@@ -23,8 +33,22 @@ type UserSrv struct {
 // @failure 500 {object} web.ErrHTTP
 // @router /users [post]
 func (o *UserSrv) CreateResource(ctx context.Context, p UserCreate) (User, error) {
-	var ans User
-	// TODO
+	params := um.RegisterUserOpts{
+		Identity:     p.Email,
+		Passwd:       p.Password,
+		Roles:        []string{"member"},
+		BeforeCommit: nil,
+		AfterCommit:  nil,
+	}
+
+	u, err1, err2 := o.Srv.RegisterUser(ctx, params)
+	if err1 != nil {
+		return User{}, err1
+	}
+	if err2 != nil {
+		return User{}, err2
+	}
+	ans := umToUser(u)
 	return ans, nil
 }
 
@@ -39,8 +63,11 @@ func (o *UserSrv) CreateResource(ctx context.Context, p UserCreate) (User, error
 // @router /users/{id} [get]
 func (o *UserSrv) GetResourceByID(ctx context.Context, id string) (User, error) {
 	var ans User
-	// TODO
-	return ans, nil
+	u, err := o.Srv.GetUserByUID(ctx, id)
+	if err != nil {
+		return ans, err
+	}
+	return umToUser(u), nil
 }
 
 // DeleteResourceByID Deletes a specific user
@@ -53,8 +80,15 @@ func (o *UserSrv) GetResourceByID(ctx context.Context, id string) (User, error) 
 // @failure 500 {object} web.ErrHTTP
 // @router /users/{id} [delete]
 func (o *UserSrv) DeleteResourceByID(ctx context.Context, id string) error {
-	// TODO
-	return nil
+	_uid, err := uuid.Parse(id)
+	if err != nil {
+		return err
+	}
+	p := um.GetUserParams{
+		UseUID: true,
+		UID:    _uid,
+	}
+	return o.Srv.DeleteUser(ctx, p)
 }
 
 // SelectResources select an array of users meeting criteria

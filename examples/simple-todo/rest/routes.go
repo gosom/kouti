@@ -54,6 +54,10 @@ func InitializeServices(specFs embed.FS, cfg *config.Config) (*Services, error) 
 		}),
 	}
 
+	if err := ans.UserSrv.Srv.InsertRoles(context.Background()); err != nil {
+		return &ans, err
+	}
+
 	ans.TodoSrv = &todos.TodoSrv{
 		Log: logger.NewSubLogger(log, "todos"),
 	}
@@ -99,6 +103,11 @@ func routes(router *chi.Mux, srv *Services) {
 			r.Group(func(r chi.Router) {
 				r.Post("/", uh.Post)
 				r.Post("/login", lh.Login)
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Get(`/{id:[a-z0-9-]{36}}`, uh.Get)
+				r.Delete(`/{id:[a-z0-9-]{36}}`, uh.Delete)
 			})
 
 		})

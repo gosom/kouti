@@ -59,6 +59,20 @@ func (s *Service) InitSchema(ctx context.Context) error {
 	return tx.Commit(ctx)
 }
 
+func (s *Service) InsertRoles(ctx context.Context) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if len(s.systemRoles) > 0 {
+		if _, err := s.Roles.Insert(ctx, tx, s.systemRoles...); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}
+
 type RegisterUserOpts struct {
 	Identity string
 	Passwd   string

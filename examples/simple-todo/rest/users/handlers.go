@@ -15,7 +15,7 @@ type UserQueryParams struct {
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
-	Roles     []um.Role `json:"roles"`
+	Roles     []um.Role `json:"roles,omitempty"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
