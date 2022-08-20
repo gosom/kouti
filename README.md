@@ -5,3 +5,7 @@ It requires Go version at least 1.18 .
 
 STILL IN HEAVY DEVELOPMENT 
 
+## Examples
+
+See the example folder
+
