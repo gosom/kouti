@@ -14,6 +14,7 @@ import (
 
 var decoder = schema.NewDecoder()
 
+// BaseHandler ...
 type BaseHandler struct {
 	Logger    zerolog.Logger
 	validator *validator.Validate
@@ -28,6 +29,7 @@ func (o BaseHandler) Validate(s any, fields ...string) error {
 	return err
 }
 
+// Log ...
 func (o BaseHandler) Log(r *http.Request, format string, v ...any) {
 	var ev *zerolog.Event
 	ev = o.Logger.Debug()
@@ -41,15 +43,18 @@ func (o BaseHandler) Log(r *http.Request, format string, v ...any) {
 	ev.Msgf(format, v...)
 }
 
+// GetReqID ...
 func (o BaseHandler) GetReqID(r *http.Request) string {
 	return middleware.GetReqID(r.Context())
 }
 
+// URLParamString ...
 func (o BaseHandler) URLParamString(r *http.Request, key string) string {
 	return chi.URLParam(r, key)
 }
 
-func (o BaseHandler) UrlParamInt(r *http.Request, key string) (int, error) {
+// URLParamInt ...
+func (o BaseHandler) URLParamInt(r *http.Request, key string) (int, error) {
 	v := chi.URLParam(r, key)
 	ans, err := strconv.Atoi(v)
 	if err != nil {
@@ -58,14 +63,17 @@ func (o BaseHandler) UrlParamInt(r *http.Request, key string) (int, error) {
 	return ans, nil
 }
 
+// BindJSON ...
 func (o BaseHandler) BindJSON(r *http.Request, v any) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
+// BindQueryParams ...
 func (o BaseHandler) BindQueryParams(r *http.Request, v any) error {
 	return decoder.Decode(v, r.URL.Query())
 }
 
+// Json ...
 func (o BaseHandler) Json(w http.ResponseWriter, statusCode int, value any) {
 	renderJson(w, statusCode, value)
 }
