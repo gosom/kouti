@@ -1,0 +1,203 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  ..Todo:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_completed:
+        type: boolean
+      updated_at:
+        type: string
+    type: object
+  ..TodoCreate:
+    properties:
+      content:
+        maxLength: 140
+        minLength: 4
+        type: string
+      is_completed:
+        type: boolean
+    required:
+    - content
+    type: object
+  github.com_gosom_kouti_examples_simple-todo.Todo:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_completed:
+        type: boolean
+      updated_at:
+        type: string
+    type: object
+  github.com_gosom_kouti_examples_simple-todo.TodoCreate:
+    properties:
+      content:
+        maxLength: 140
+        minLength: 4
+        type: string
+      is_completed:
+        type: boolean
+    required:
+    - content
+    type: object
+  web.ErrHTTP:
+    properties:
+      errors:
+        items:
+          type: string
+        type: array
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: Giorgos
+    url: https://github.com/gosom/kouti/issues
+  description: |-
+    This is a sample server todo server.
+    You can visit the GitHub repository at https://github.com/gosom/kouti
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Todo API based on kouti
+  version: "0.1"
+paths:
+  /todos:
+    post:
+      operationId: create-todo
+      parameters:
+      - description: the body to create a todo
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_gosom_kouti_examples_simple-todo.TodoCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github.com_gosom_kouti_examples_simple-todo.Todo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+      summary: Create a todo
+  /todos/:
+    get:
+      operationId: select-todos
+      parameters:
+      - description: returns todos containing Content
+        in: query
+        name: content
+        type: string
+      - description: t to return is_completed todos and f to with completed false
+        in: query
+        name: is_completed
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github.com_gosom_kouti_examples_simple-todo.Todo'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+      summary: Returns a list of todos
+  /todos/{id}:
+    delete:
+      operationId: delete-todo
+      parameters:
+      - description: the id of the todo to delete
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+      summary: deletes todo with id
+    get:
+      operationId: get-todo
+      parameters:
+      - description: the id of the todo to fetch
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_gosom_kouti_examples_simple-todo.Todo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+      summary: Returns todo with id
+    put:
+      operationId: update-todo
+      parameters:
+      - description: the id of the todo to update
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrHTTP'
+      summary: Updates todo with id
+produces:
+- application/json
+swagger: "2.0"

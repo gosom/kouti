@@ -29,24 +29,24 @@ type DB struct {
 	dbconn *pgxpool.Pool
 }
 
-func New(ctx context.Context, cfg Config) (DB, error) {
+func New(ctx context.Context, cfg Config) (*DB, error) {
 	ans := DB{
 		logger: cfg.Logger,
 	}
 	var err error
 	ans.dbconn, err = Connect(ctx, cfg.ConnString)
-	return ans, err
+	return &ans, err
 }
 
-func (o DB) RawConn() *pgxpool.Pool {
+func (o *DB) RawConn() *pgxpool.Pool {
 	return o.dbconn
 }
 
-func (o DB) Begin(ctx context.Context) (pgx.Tx, error) {
+func (o *DB) Begin(ctx context.Context) (pgx.Tx, error) {
 	return o.dbconn.Begin(ctx)
 }
 
-func (o DB) Close() {
+func (o *DB) Close() {
 	o.dbconn.Close()
 }
 

@@ -68,6 +68,14 @@ func (o BaseHandler) BindJSON(r *http.Request, v any) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
+// BindJSONValidate ...
+func (o BaseHandler) BindJSONValidate(r *http.Request, v any) error {
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		return err
+	}
+	return o.Validate(v)
+}
+
 // BindQueryParams ...
 func (o BaseHandler) BindQueryParams(r *http.Request, v any) error {
 	return decoder.Decode(v, r.URL.Query())
