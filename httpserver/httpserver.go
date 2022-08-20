@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -80,7 +79,7 @@ func setDefaults(cfg Config) Config {
 
 // Run starts the webserver. It returns an error if the webserver is not
 // exited gracefully
-func Run(cfg Config) error {
+func Run(ctx context.Context, cfg Config) error {
 	cfg = setDefaults(cfg)
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, cfg.ExitSignals...)
@@ -117,12 +116,11 @@ func Run(cfg Config) error {
 	}()
 
 	select {
-	case sig := <-sigs:
-		fmt.Println(sig)
+	case _ = <-sigs:
 		const timeout = 5 * time.Second
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx2, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
-		if err := srv.Shutdown(ctx); err != nil {
+		if err := srv.Shutdown(ctx2); err != nil {
 			if err := srv.Close(); err != nil {
 				return err
 			}
@@ -133,7 +131,6 @@ func Run(cfg Config) error {
 		}
 		return err
 	case err := <-errs:
-		fmt.Println(err)
 		return err
 	}
 
